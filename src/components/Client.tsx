@@ -31,10 +31,18 @@ export const Client = () => {
     const hub = connRef.current?.proxies[hubId] as Proxy;
     if (!hub) return;
 
-    const hubInst = hub.invoke(method, ...args) as any;
-    hubInst
-      .done(() => {
-        setMessages((x) => [...x, formatLogMsg("Invoke executed successfuly")]);
+    const res = hub.invoke(method, ...args) as any;
+    res
+      .done((res: unknown) => {
+        setMessages((x) => [
+          ...x,
+          formatLogMsg(
+            res
+              ? `(Invoke) ${JSON.stringify(res)}`
+              : "Invoke executed successfully, no respononse received.",
+            hubId
+          ),
+        ]);
       })
       .fail((err: string) => {
         setMessages((x) => [...x, formatLogMsg(err.toString())]);
@@ -69,6 +77,12 @@ export const Client = () => {
       const hub = con.createHubProxy(x);
       (hub.connection as any).events.onReceived.push((_: any, payload: any) => {
         if (payload.I) return;
+        if (!payload.A)
+          return console.warn(
+            `Unknown response type {${Object.keys(payload).map(
+              (x) => `${x}: ${typeof payload[x]}`
+            )}}`
+          );
         setMessages((x) => [
           ...x,
           formatLogMsg(`(${payload.M}) ${JSON.stringify(payload.A)}\n`, payload.H),
@@ -103,6 +117,7 @@ export const Client = () => {
               if (!val) {
                 connRef.current?.stop();
                 connRef.current = null;
+                setConnStatus("idle");
               } else {
                 setMessages([]);
               }
