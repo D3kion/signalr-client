@@ -14,6 +14,33 @@ export const Client = () => {
   const [hubs, setHubs] = useState<string[]>([]);
   const connRef = useRef<Connection | null>(null);
 
+  const invoke = (payload: string, hubId: string) => {
+    const [method, ...rawArgs] = payload.split("(");
+    if (!method) {
+      setMessages((x) => [...x, formatLogMsg("Error: could not parse payload")]);
+      return;
+    }
+
+    const argsStr = rawArgs.join("");
+    const idx = argsStr.lastIndexOf(")");
+    const args = argsStr
+      .slice(0, idx)
+      .split(",")
+      .map((x) => x.trim());
+
+    const hub = connRef.current?.proxies[hubId] as Proxy;
+    if (!hub) return;
+
+    const hubInst = hub.invoke(method, ...args) as any;
+    hubInst
+      .done(() => {
+        setMessages((x) => [...x, formatLogMsg("Invoke executed successfuly")]);
+      })
+      .fail((err: string) => {
+        setMessages((x) => [...x, formatLogMsg(err.toString())]);
+      });
+  };
+
   useEffect(() => {
     if (!address) return;
     setHubs([]);
@@ -40,7 +67,13 @@ export const Client = () => {
 
     hubs.forEach((x) => {
       const hub = con.createHubProxy(x);
-      hub.on("message", (ev) => setMessages((prev) => [...prev, formatLogMsg(ev, x)]));
+      (hub.connection as any).events.onReceived.push((_: any, payload: any) => {
+        if (payload.I) return;
+        setMessages((x) => [
+          ...x,
+          formatLogMsg(`(${payload.M}) ${JSON.stringify(payload.A)}\n`, payload.H),
+        ]);
+      });
     });
     setHubs(hubs);
 
@@ -85,31 +118,7 @@ export const Client = () => {
           autosize
           readOnly
         />
-        <InvokeInput
-          hubs={hubs}
-          onSend={(payload, hubId) => {
-            const [method, ...rawArgs] = payload.split("(");
-            if (!method) {
-              setMessages((x) => [...x, formatLogMsg("Error: could not parse payload")]);
-              return;
-            }
-
-            const argsStr = rawArgs.join("");
-            const idx = argsStr.lastIndexOf(")");
-            const args = argsStr
-              .slice(0, idx)
-              .split(",")
-              .map((x) => x.trim());
-
-            const hub = connRef.current?.proxies[hubId] as Proxy;
-            if (!hub) return;
-            const hubInst = hub.invoke(method, args) as any;
-            hubInst.fail((err: string) => {
-              setMessages((x) => [...x, formatLogMsg(err.toString())]);
-            });
-          }}
-          disabled={connStatus !== "connected"}
-        />
+        <InvokeInput hubs={hubs} onSend={invoke} disabled={connStatus !== "connected"} />
       </Stack>
     </Container>
   );

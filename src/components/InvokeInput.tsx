@@ -53,7 +53,6 @@ export const InvokeInput = ({
       value={payload}
       onChange={(e) => setPayload(e.currentTarget.value)}
       onKeyDown={(e) => e.key === "Enter" && submit()}
-      onClick={submit}
       icon={select}
       iconWidth={172}
       radius="xl"

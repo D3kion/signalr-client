@@ -11,6 +11,8 @@ import {
 } from "@mantine/core";
 import { Sun, MoonStars } from "tabler-icons-react";
 
+import pkg from "../../package.json";
+
 export const Layout = ({ children }: PropsWithChildren) => {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
@@ -23,7 +25,7 @@ export const Layout = ({ children }: PropsWithChildren) => {
             <Group position="apart" style={{ height: "100%" }}>
               <Group>
                 <Title order={3}>SignalR Client</Title>
-                <Code>v0.1.0</Code>
+                <Code>{pkg.version}</Code>
               </Group>
 
               <ActionIcon

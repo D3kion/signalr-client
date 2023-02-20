@@ -19,6 +19,8 @@ export const AddressInput = ({
     localStorage.getItem(LS_ADDRESS_TOKEN) || ""
   );
 
+  const submit = () => onConnect(!isConnected ? address || null : null);
+
   useEffect(() => {
     if (!isConnected) return;
     localStorage.setItem(LS_ADDRESS_TOKEN, address);
@@ -29,6 +31,7 @@ export const AddressInput = ({
       value={address}
       onChange={(e) => setAddress(e.currentTarget.value)}
       icon={<PlugConnected size={18} strokeWidth={1.5} />}
+      onKeyDown={(e) => e.key === "Enter" && submit()}
       radius="xl"
       size="md"
       rightSection={
@@ -37,7 +40,7 @@ export const AddressInput = ({
           radius="xl"
           color={!isConnected ? theme.primaryColor : "red"}
           variant="filled"
-          onClick={() => onConnect(!isConnected ? address || null : null)}
+          onClick={submit}
         >
           {isConnected ? (
             <PlayerStop fill="white" size={18} />
